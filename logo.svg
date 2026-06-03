@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#0f0f1a"/>
+  <!-- Antenna/Signal bars -->
+  <rect x="155" y="80" width="24" height="60" rx="6" fill="#e0e0e0" opacity="0.3"/>
+  <rect x="195" y="110" width="24" height="90" rx="6" fill="#e0e0e0" opacity="0.4"/>
+  <rect x="235" y="140" width="24" height="120" rx="6" fill="#ff6b35" opacity="0.7"/>
+  <rect x="275" y="110" width="24" height="90" rx="6" fill="#e0e0e0" opacity="0.4"/>
+  <rect x="315" y="80" width="24" height="60" rx="6" fill="#e0e0e0" opacity="0.3"/>
+  <!-- Feed lines -->
+  <line x1="160" y1="310" x2="352" y2="310" stroke="#ff6b35" stroke-width="6" stroke-linecap="round"/>
+  <line x1="170" y1="340" x2="340" y2="340" stroke="#e0e0e0" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
+  <line x1="160" y1="370" x2="332" y2="370" stroke="#ff6b35" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="175" y1="400" x2="325" y2="400" stroke="#e0e0e0" stroke-width="4" stroke-linecap="round" opacity="0.25"/>
+  <line x1="165" y1="430" x2="320" y2="430" stroke="#e0e0e0" stroke-width="4" stroke-linecap="round" opacity="0.35"/>
+  <!-- Incoming arrow -->
+  <path d="M256 30 L256 70" stroke="#ff6b35" stroke-width="8" stroke-linecap="round"/>
+  <polygon points="244,58 256,78 268,58" fill="#ff6b35"/>
+</svg>
