@@ -1,13 +1,5 @@
 <p align="center">
-  <svg width="120" height="120" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="100" rx="20" fill="#1a1a2e"/>
-    <path d="M25 35 C25 25, 45 20, 50 30 C55 20, 75 25, 75 35" stroke="#ff6b35" stroke-width="5" stroke-linecap="round" fill="none"/>
-    <path d="M30 45 C30 38, 45 35, 50 42 C55 35, 70 38, 70 45" stroke="#ff6b35" stroke-width="4" stroke-linecap="round" fill="none"/>
-    <circle cx="50" cy="60" r="14" stroke="#ff6b35" stroke-width="4" fill="none"/>
-    <circle cx="50" cy="60" r="5" fill="#ff6b35"/>
-    <path d="M50 74 L50 82" stroke="#ff6b35" stroke-width="3" stroke-linecap="round"/>
-    <path d="M40 80 L60 80" stroke="#ff6b35" stroke-width="2" stroke-linecap="round"/>
-  </svg>
+  <img src="./logo.svg" alt="Webhook Inspector" width="120" />
 </p>
 
 # Webhook Inspector
