@@ -237,6 +237,26 @@ header .clear-btn:hover {
   background: rgba(255,107,53,0.08);
 }
 
+/* HMAC Verification */
+.hmac-section { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px; }
+.hmac-toggle { background: none; border: 1px dashed var(--border); color: var(--text-dim); padding: 8px 14px; border-radius: var(--radius); cursor: pointer; font-size: 0.78rem; transition: all 0.2s; text-align: center; width: 100%; }
+.hmac-toggle:hover { border-color: var(--accent); color: var(--accent); background: rgba(255,107,53,0.08); }
+.hmac-body { display: none; flex-direction: column; gap: 8px; }
+.hmac-body.open { display: flex; }
+.hmac-row { display: flex; gap: 6px; align-items: center; }
+.hmac-row input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: var(--mono); font-size: 0.8rem; padding: 8px 10px; transition: border-color 0.2s; }
+.hmac-row input:focus { outline: none; border-color: var(--accent); }
+.hmac-row select { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 8px 10px; font-size: 0.8rem; cursor: pointer; }
+.hmac-row select:focus { outline: none; border-color: var(--accent); }
+.hmac-result { display: none; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; font-family: var(--mono); font-size: 0.75rem; margin-top: 4px; }
+.hmac-result.show { display: block; }
+.hmac-result .sig-label { color: var(--text-dim); }
+.hmac-result .sig-value { color: var(--text); word-break: break-all; }
+.hmac-result .sig-match { color: var(--success); font-weight: 700; }
+.hmac-result .sig-mismatch { color: var(--danger); font-weight: 700; }
+.hmac-compute-btn { align-self: flex-start; background: none; border: 1px solid var(--accent); color: var(--accent); padding: 6px 14px; border-radius: var(--radius); cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+.hmac-compute-btn:hover { background: rgba(255,107,53,0.15); }
+
 /* Send button */
 .send-btn {
   width: 100%;
@@ -638,6 +658,32 @@ header .clear-btn:hover {
         </div>
       </div>
       <button class="add-header-btn" id="addHeaderBtn">+ Add header</button>
+    </div>
+
+    <!-- HMAC Verification -->
+    <div class="hmac-section">
+      <button class="hmac-toggle" id="hmacToggle">🔐 HMAC Signature Verification ▾</button>
+      <div class="hmac-body" id="hmacBody">
+        <div class="hmac-row">
+          <input type="text" id="hmacSecret" placeholder="Shared secret key" spellcheck="false">
+        </div>
+        <div class="hmac-row">
+          <input type="text" id="hmacSigHeader" placeholder="Signature header name (e.g. x-hub-signature-256)" value="x-hub-signature-256">
+          <select id="hmacAlgo">
+            <option value="SHA-256">SHA-256</option>
+            <option value="SHA-1">SHA-1</option>
+          </select>
+        </div>
+        <div class="hmac-row">
+          <input type="text" id="hmacExpected" placeholder="Expected signature (hex)" spellcheck="false">
+        </div>
+        <button class="hmac-compute-btn" id="hmacComputeBtn">🔐 Compute &amp; Verify</button>
+        <div class="hmac-result" id="hmacResult">
+          <div class="sig-label">Computed Signature</div>
+          <div class="sig-value" id="hmacComputedSig">—</div>
+          <div style="margin-top:6px;"><span class="sig-label">Status: </span><span id="hmacStatus">—</span></div>
+        </div>
+      </div>
     </div>
 
     <!-- Send -->
@@ -1107,6 +1153,101 @@ function hideToast() {
 }
 
 toastClose.addEventListener('click', hideToast);
+
+// HMAC Verification
+const hmacToggle = document.getElementById('hmacToggle');
+const hmacBody = document.getElementById('hmacBody');
+const hmacSecret = document.getElementById('hmacSecret');
+const hmacSigHeader = document.getElementById('hmacSigHeader');
+const hmacAlgo = document.getElementById('hmacAlgo');
+const hmacExpected = document.getElementById('hmacExpected');
+const hmacComputeBtn = document.getElementById('hmacComputeBtn');
+const hmacComputedSig = document.getElementById('hmacComputedSig');
+const hmacStatus = document.getElementById('hmacStatus');
+const hmacResult = document.getElementById('hmacResult');
+
+hmacToggle.addEventListener('click', function(){
+  hmacBody.classList.toggle('open');
+  hmacToggle.textContent = hmacBody.classList.contains('open')
+    ? '🔐 HMAC Signature Verification ▴' : '🔐 HMAC Signature Verification ▾';
+});
+
+// Convert hex string to ArrayBuffer
+function hexToBuffer(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2)
+    bytes[i/2] = parseInt(hex.substr(i, 2), 16);
+  return bytes.buffer;
+}
+
+// ArrayBuffer to hex string
+function bufferToHex(buf) {
+  const bytes = new Uint8Array(buf);
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Encode string to ArrayBuffer (UTF-8)
+function strToBuf(str) {
+  return new TextEncoder().encode(str).buffer;
+}
+
+async function computeHMAC(secret, data, algorithm) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    strToBuf(secret),
+    { name: 'HMAC', hash: { name: algorithm } },
+    false,
+    ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, strToBuf(data));
+  return bufferToHex(sig);
+}
+
+hmacComputeBtn.addEventListener('click', async function(){
+  const secret = hmacSecret.value.trim();
+  if (!secret) { showToast('⚠️ Enter a shared secret'); return; }
+
+  const payload = payloadInput.value.trim();
+  if (!payload) { showToast('⚠️ Enter a JSON payload first'); return; }
+
+  const algo = hmacAlgo.value; // 'SHA-256' or 'SHA-1'
+  const dataToSign = payload;
+  const expectedSig = hmacExpected.value.trim().toLowerCase();
+
+  try {
+    const computedSig = await computeHMAC(secret, dataToSign, algo);
+    hmacComputedSig.textContent = (algo === 'SHA-256' ? 'sha256=' : 'sha1=') + computedSig;
+    hmacResult.classList.add('show');
+
+    if (expectedSig) {
+      const cleanExpected = expectedSig.replace(/^sha256=|^sha1=/i, '');
+      if (computedSig === cleanExpected) {
+        hmacStatus.innerHTML = '<span class="sig-match">✅ MATCH — signatures are identical</span>';
+      } else {
+        hmacStatus.innerHTML = '<span class="sig-mismatch">❌ MISMATCH — signatures differ</span>';
+      }
+    } else {
+      hmacStatus.innerHTML = '<span style="color:var(--text-dim);">ℹ No expected signature provided for comparison</span>';
+    }
+  } catch(err) {
+    showToast('⚠️ HMAC error: ' + err.message);
+  }
+});
+
+// Auto-detect expected signature from headers
+function autoDetectExpectedSig() {
+  const headers = collectHeaders();
+  const sigHeader = hmacSigHeader.value.trim().toLowerCase();
+  if (sigHeader && headers[sigHeader]) {
+    hmacExpected.value = headers[sigHeader];
+  }
+}
+
+// Override send to auto-update expected signature
+const origSend = sendBtn.click;
+sendBtn.addEventListener('click', function(){
+  setTimeout(autoDetectExpectedSig, 100);
+});
 
 // Init
 loadHistory();
